@@ -1,2 +1,3 @@
 # NLP-for-IBIS-
 Creating a proof of concept around nlp: producing topic modelling 
+The Topic Modelling part is not open source..... 
