@@ -1,0 +1,741 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "e27c5049-17bd-47c7-a066-4fe69f6f43ea",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "f9e07aac-9dc3-46cf-8581-218d8763fe67",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def new_score(score:int):\n",
+    "    if score <= 2:\n",
+    "        return 0\n",
+    "    else:\n",
+    "        return 1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "471ae1b6-aa4c-4973-8a32-68378c054fba",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = pd.read_csv(\"comments_hotel_0667.csv\")#10\n",
+    "df_test = pd.read_csv(\"comments_hotel_0732.csv\")#3"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "6a2b5cde-73c4-4306-902e-f9d1b5e0269b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df_train[(df_train['score'] <=2) | (df_train['score'] >= 4)]\n",
+    "df_test = df_test[(df_test['score'] <=2) | (df_test['score'] >= 4)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "b1f7584c-3ed4-42dd-b9c8-3957cf41c53e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train['new_score'] = df_train['score'].apply(new_score)\n",
+    "df_test['new_score'] = df_test['score'].apply(new_score)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "4ec073fa-448d-4f6a-87af-157da317b3d3",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "123"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df_train.review)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "06564f4d-3bb9-4a96-a0aa-1eb95cebbc60",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "172"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df_test.review)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "96df6c25-81c2-4b4e-afbf-c7a0313ebce2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import spacy\n",
+    "import fr_core_news_md\n",
+    "nlp = fr_core_news_md.load()\n",
+    "french_corpus = set(nlp.vocab.strings) # french corpus"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "af8b4fd1-c2a7-4da0-bd22-09769737d19a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+    "\n",
+    "tf_idf = TfidfVectorizer(min_df=1, ngram_range=(1,1))\n",
+    "tf_idf.fit(french_corpus)\n",
+    "X_train = tf_idf.transform(df_train.review)\n",
+    "X_test = tf_idf.transform(df_test.review)\n",
+    "y_train = df_train['new_score']\n",
+    "y_test = df_test['new_score']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "c8cd4bc1-cc66-4642-beac-804aa2af38b1",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<123x372559 sparse matrix of type '<class 'numpy.float64'>'\n",
+       "\twith 6196 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_train"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "29bcbc9f-19c6-4086-b6ba-c435edcd3764",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<172x372559 sparse matrix of type '<class 'numpy.float64'>'\n",
+       "\twith 8043 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_test"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "ae0187ad-5e68-42d4-9523-37bba6cdad57",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy for C=0.01: 0.6627906976744186\n",
+      "Accuracy for C=0.05: 0.6627906976744186\n",
+      "Accuracy for C=0.25: 0.6627906976744186\n",
+      "Accuracy for C=0.5: 0.6627906976744186\n",
+      "Accuracy for C=1: 0.6802325581395349\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.linear_model import LogisticRegression\n",
+    "from sklearn.metrics import accuracy_score\n",
+    "\n",
+    "for c in [0.01, 0.05, 0.25, 0.5, 1]:\n",
+    "    \n",
+    "    lr = LogisticRegression(C=c)\n",
+    "    lr.fit(X_train, y_train)\n",
+    "    print (\"Accuracy for C=%s: %s\" \n",
+    "           % (c, accuracy_score(y_test, lr.predict(X_test))))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "51a1c9f5-cfcc-4d87-9b62-5815b9118b5f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1 = pd.concat(map(pd.read_csv, ['comments_hotel_0667.csv', 'comments_hotel_0732.csv','comments_hotel_0839.csv','comments_hotel_2033.csv','comments_hotel_2034.csv','comments_hotel_2035.csv','comments_hotel_3362.csv','comments_hotel_5682.csv','comments_hotel_5708.csv','comments_hotel_6144.csv']))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "f0e06f9c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "4163"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "23483b74",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df2 = pd.concat(map(pd.read_csv, ['comments_hotel_6231.csv','comments_hotel_6289.csv','comments_hotel_6290.csv' ]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "c72a8c5b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1165"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "4829fa3f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df1\n",
+    "df_test = df2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "b0fc0e5e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df_train[(df_train['score'] <=2) | (df_train['score'] >= 4)]\n",
+    "df_test = df_test[(df_test['score'] <=2) | (df_test['score'] >= 4)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "aafb85dc",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/var/folders/v0/_twnl3cs73qcs_047m7zshj80000gn/T/ipykernel_978/3545111881.py:1: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  df_train['new_score'] = df_train['score'].apply(new_score)\n",
+      "/var/folders/v0/_twnl3cs73qcs_047m7zshj80000gn/T/ipykernel_978/3545111881.py:2: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  df_test['new_score'] = df_test['score'].apply(new_score)\n"
+     ]
+    }
+   ],
+   "source": [
+    "df_train['new_score'] = df_train['score'].apply(new_score)\n",
+    "df_test['new_score'] = df_test['score'].apply(new_score)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "e8532b90",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "3280"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df_train.review)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "763cbf62",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "927"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df_test.review)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "887e5a5b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+    "\n",
+    "tf_idf = TfidfVectorizer(min_df=1, ngram_range=(1,1))\n",
+    "tf_idf.fit(french_corpus)\n",
+    "X_train = tf_idf.transform(df_train.review)\n",
+    "X_test = tf_idf.transform(df_test.review)\n",
+    "y_train = df_train['new_score']\n",
+    "y_test = df_test['new_score']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "ec0020bd",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<927x372559 sparse matrix of type '<class 'numpy.float64'>'\n",
+       "\twith 43207 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X_test"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "b518040c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy for C=0.01: 0.8025889967637541\n",
+      "Accuracy for C=0.05: 0.8025889967637541\n",
+      "Accuracy for C=0.25: 0.8565264293419633\n",
+      "Accuracy for C=0.5: 0.8737864077669902\n",
+      "Accuracy for C=1: 0.8921251348435815\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.linear_model import LogisticRegression\n",
+    "from sklearn.metrics import accuracy_score\n",
+    "\n",
+    "for c in [0.01, 0.05, 0.25, 0.5, 1]:\n",
+    "    \n",
+    "    lr = LogisticRegression(C=c)\n",
+    "    lr.fit(X_train, y_train)\n",
+    "    print (\"Accuracy for C=%s: %s\" \n",
+    "           % (c, accuracy_score(y_test, lr.predict(X_test))))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "63ba9bef",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1 = pd.concat(map(pd.read_csv, ['comments_hotel_0667.csv', 'comments_hotel_0732.csv','comments_hotel_0839.csv','comments_hotel_2033.csv','comments_hotel_2034.csv','comments_hotel_2035.csv','comments_hotel_3362.csv','comments_hotel_5682.csv','comments_hotel_5708.csv','comments_hotel_6144.csv','comments_hotel_B065.csv','comments_hotel_A0K0.csv','comments_hotel_A0G4.csv','comments_hotel_A0G3.csv','comments_hotel_A0G2.csv','comments_hotel_A094.csv','comments_hotel_9747.csv','comments_hotel_8107.csv','comments_hotel_8106.csv','comments_hotel_8105.csv']))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "8e6275dd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df2 = pd.concat(map(pd.read_csv, ['comments_hotel_6231.csv','comments_hotel_6289.csv','comments_hotel_6290.csv','comments_hotel_8104.csv','comments_hotel_7958.csv','comments_hotel_7585.csv' ]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "id": "73ab3f07",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df1\n",
+    "df_test = df2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "01748db0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df_train[(df_train['score'] <=2) | (df_train['score'] >= 4)]\n",
+    "df_test = df_test[(df_test['score'] <=2) | (df_test['score'] >= 4)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "3ac9d572",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/var/folders/v0/_twnl3cs73qcs_047m7zshj80000gn/T/ipykernel_978/3545111881.py:1: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  df_train['new_score'] = df_train['score'].apply(new_score)\n",
+      "/var/folders/v0/_twnl3cs73qcs_047m7zshj80000gn/T/ipykernel_978/3545111881.py:2: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  df_test['new_score'] = df_test['score'].apply(new_score)\n"
+     ]
+    }
+   ],
+   "source": [
+    "df_train['new_score'] = df_train['score'].apply(new_score)\n",
+    "df_test['new_score'] = df_test['score'].apply(new_score)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "651dada8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+    "\n",
+    "tf_idf = TfidfVectorizer(min_df=1, ngram_range=(1,1))\n",
+    "tf_idf.fit(french_corpus)\n",
+    "X_train = tf_idf.transform(df_train.review)\n",
+    "X_test = tf_idf.transform(df_test.review)\n",
+    "y_train = df_train['new_score']\n",
+    "y_test = df_test['new_score']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "id": "ab88ae1f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy for C=0.01: 0.8304498269896193\n",
+      "Accuracy for C=0.05: 0.8304498269896193\n",
+      "Accuracy for C=0.25: 0.8788927335640139\n",
+      "Accuracy for C=0.5: 0.8968858131487889\n",
+      "Accuracy for C=1: 0.9100346020761245\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.linear_model import LogisticRegression\n",
+    "from sklearn.metrics import accuracy_score\n",
+    "\n",
+    "for c in [0.01, 0.05, 0.25, 0.5, 1]:\n",
+    "    \n",
+    "    lr = LogisticRegression(C=c)\n",
+    "    lr.fit(X_train, y_train)\n",
+    "    print (\"Accuracy for C=%s: %s\" \n",
+    "           % (c, accuracy_score(y_test, lr.predict(X_test))))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "id": "1e8ecdd8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df1 = pd.concat(map(pd.read_csv, ['comments_hotel_0667.csv', 'comments_hotel_0732.csv','comments_hotel_0839.csv','comments_hotel_2033.csv','comments_hotel_2034.csv','comments_hotel_2035.csv','comments_hotel_3362.csv','comments_hotel_5682.csv','comments_hotel_5708.csv','comments_hotel_6144.csv','comments_hotel_6491.csv','comments_hotel_6573.csv','comments_hotel_6583.csv','comments_hotel_6681.csv','comments_hotel_6708.csv','comments_hotel_6777.csv','comments_hotel_6812.csv','comments_hotel_6857.csv','comments_hotel_6945.csv','comments_hotel_7121.csv','comments_hotel_B065.csv','comments_hotel_A0K0.csv','comments_hotel_A0G4.csv','comments_hotel_A0G3.csv','comments_hotel_A0G2.csv','comments_hotel_A094.csv','comments_hotel_9747.csv','comments_hotel_8107.csv','comments_hotel_8106.csv','comments_hotel_8105.csv']))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "id": "69fcca1d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df2 = pd.concat(map(pd.read_csv, ['comments_hotel_6231.csv','comments_hotel_6289.csv','comments_hotel_6290.csv','comments_hotel_8104.csv','comments_hotel_7958.csv','comments_hotel_7585.csv','comments_hotel_7122.csv','comments_hotel_7577.csv']))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "id": "3ddfda4d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "8393"
+      ]
+     },
+     "execution_count": 43,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "id": "1b8fad9e",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1853"
+      ]
+     },
+     "execution_count": 44,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(df2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "id": "a3d503f9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df1\n",
+    "df_test = df2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 46,
+   "id": "8a9deebc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_train = df_train[(df_train['score'] <=2) | (df_train['score'] >= 4)]\n",
+    "df_test = df_test[(df_test['score'] <=2) | (df_test['score'] >= 4)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "id": "326952d9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/var/folders/v0/_twnl3cs73qcs_047m7zshj80000gn/T/ipykernel_978/3545111881.py:1: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  df_train['new_score'] = df_train['score'].apply(new_score)\n",
+      "/var/folders/v0/_twnl3cs73qcs_047m7zshj80000gn/T/ipykernel_978/3545111881.py:2: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  df_test['new_score'] = df_test['score'].apply(new_score)\n"
+     ]
+    }
+   ],
+   "source": [
+    "df_train['new_score'] = df_train['score'].apply(new_score)\n",
+    "df_test['new_score'] = df_test['score'].apply(new_score)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "id": "708b59b0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+    "\n",
+    "tf_idf = TfidfVectorizer(min_df=1, ngram_range=(1,1))\n",
+    "tf_idf.fit(french_corpus)\n",
+    "X_train = tf_idf.transform(df_train.review)\n",
+    "X_test = tf_idf.transform(df_test.review)\n",
+    "y_train = df_train['new_score']\n",
+    "y_test = df_test['new_score']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "id": "ff4fbc94",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy for C=0.01: 0.8290598290598291\n",
+      "Accuracy for C=0.05: 0.8422090729783037\n",
+      "Accuracy for C=0.25: 0.9040105193951348\n",
+      "Accuracy for C=0.5: 0.9171597633136095\n",
+      "Accuracy for C=1: 0.9322813938198553\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearn.linear_model import LogisticRegression\n",
+    "from sklearn.metrics import accuracy_score\n",
+    "\n",
+    "for c in [0.01, 0.05, 0.25, 0.5, 1]:\n",
+    "    \n",
+    "    lr = LogisticRegression(C=c)\n",
+    "    lr.fit(X_train, y_train)\n",
+    "    print (\"Accuracy for C=%s: %s\" \n",
+    "           % (c, accuracy_score(y_test, lr.predict(X_test))))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "02a7d00b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
